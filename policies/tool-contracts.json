@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "tools": [
+    {
+      "name": "analyze_job_description",
+      "description": "Extract and prioritize requirements from one or more job descriptions",
+      "input_schema": {
+        "type": "object",
+        "required": ["job_descriptions", "target_level"],
+        "properties": {
+          "job_descriptions": { "type": "array", "minItems": 1, "maxItems": 3, "items": { "type": "string", "minLength": 50 } },
+          "target_level": { "type": "string", "enum": ["Senior", "Staff", "Principal", "VP"] },
+          "role_focus": { "type": "string" },
+          "resume_type": { "type": "string", "enum": ["tech", "non_tech", "hybrid", "executive"], "default": "tech" },
+          "audience": { "type": "string", "enum": ["hiring_manager", "recruiter", "executive_panel", "ats"], "default": "hiring_manager" }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["requirements", "commonality", "must_have", "nice_to_have", "selected_profile", "profile_reasoning"],
+        "properties": {
+          "requirements": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["requirement", "category", "priority"],
+              "properties": {
+                "requirement": { "type": "string" },
+                "category": { "type": "string" },
+                "priority": { "type": "string", "enum": ["must", "high", "medium", "low"] }
+              }
+            }
+          },
+          "commonality": { "type": "array", "items": { "type": "object" } },
+          "must_have": { "type": "array", "items": { "type": "string" } },
+          "nice_to_have": { "type": "array", "items": { "type": "string" } },
+          "selected_profile": { "type": "string", "enum": ["tech", "non_tech", "hybrid", "executive"] },
+          "profile_reasoning": { "type": "string" },
+          "workspace_setup": { "$ref": "#/$defs/workspace_setup" },
+          "interactive": { "$ref": "#/$defs/interactive" }
+        }
+      }
+    },
+    {
+      "name": "map_resume_to_requirements",
+      "description": "Map resume/profile evidence to JD requirements with provenance and confidence",
+      "input_schema": {
+        "type": "object",
+        "required": ["resume_text", "requirements"],
+        "properties": {
+          "resume_text": { "type": "string", "minLength": 100 },
+          "master_profile": { "type": "string" },
+          "requirements": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "resume_type": { "type": "string", "enum": ["tech", "non_tech", "hybrid", "executive"], "default": "tech" },
+          "audience": { "type": "string", "enum": ["hiring_manager", "recruiter", "executive_panel", "ats"], "default": "hiring_manager" }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["matches", "partials", "missing", "domain_shift_score", "selected_profile"],
+        "properties": {
+          "matches": { "$ref": "#/$defs/mappings" },
+          "partials": { "$ref": "#/$defs/mappings" },
+          "missing": { "$ref": "#/$defs/mappings" },
+          "domain_shift_score": { "type": "number", "minimum": 0, "maximum": 1 },
+          "selected_profile": { "type": "string", "enum": ["tech", "non_tech", "hybrid", "executive"] },
+          "supplemental_skills_used": { "type": "array", "items": { "type": "string" } },
+          "interactive": { "$ref": "#/$defs/interactive" }
+        }
+      }
+    },
+    {
+      "name": "generate_resume_draft",
+      "description": "Generate draft resume with tagged claims and verification questions",
+      "input_schema": {
+        "type": "object",
+        "required": ["resume_source", "mapping_result", "target_role"],
+        "properties": {
+          "resume_source": { "type": "string" },
+          "mapping_result": { "type": "object" },
+          "target_role": { "type": "string" },
+          "target_company": { "type": "string" },
+          "resume_type": { "type": "string", "enum": ["tech", "non_tech", "hybrid", "executive"], "default": "tech" },
+          "audience": { "type": "string", "enum": ["hiring_manager", "recruiter", "executive_panel", "ats"], "default": "hiring_manager" },
+          "output_format": { "type": "string", "enum": ["md", "txt", "docx", "pdf"], "default": "md" }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["resume_draft", "evidence_log", "verification_questions", "unresolved_verification_count", "selected_profile", "profile_reasoning"],
+        "properties": {
+          "resume_draft": { "type": "string" },
+          "evidence_log": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["requirement", "resume_evidence", "tag", "confidence"],
+              "properties": {
+                "requirement": { "type": "string" },
+                "resume_evidence": { "type": "string" },
+                "tag": { "type": "string", "enum": ["VERIFIED", "INFERRED", "STRETCH", "USER-VERIFY", "USER-PROFILE"] },
+                "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+              }
+            }
+          },
+          "verification_questions": { "type": "array", "items": { "type": "string" } },
+          "unresolved_verification_count": { "type": "integer", "minimum": 0 },
+          "selected_profile": { "type": "string", "enum": ["tech", "non_tech", "hybrid", "executive"] },
+          "profile_reasoning": { "type": "string" },
+          "supplemental_skills_used": { "type": "array", "items": { "type": "string" } },
+          "workspace_setup": { "$ref": "#/$defs/workspace_setup" },
+          "suggested_path": { "type": "string" },
+          "suggested_filename": { "type": "string" },
+          "interactive": { "$ref": "#/$defs/interactive" }
+        }
+      }
+    },
+    {
+      "name": "finalize_resume",
+      "description": "Finalize a draft only after required claim verification",
+      "input_schema": {
+        "type": "object",
+        "required": ["resume_draft", "verification_answers", "unresolved_verification_count"],
+        "properties": {
+          "resume_draft": { "type": "string" },
+          "selected_profile": { "type": "string", "enum": ["tech", "non_tech", "hybrid", "executive"] },
+          "verification_answers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["question", "status"],
+              "properties": {
+                "question": { "type": "string" },
+                "status": { "type": "string", "enum": ["verified", "rejected", "deferred"] },
+                "value": { "type": "string" }
+              }
+            }
+          },
+          "unresolved_verification_count": { "type": "integer", "minimum": 0 }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["status", "resume_final", "blocked_reasons", "selected_profile"],
+        "properties": {
+          "status": { "type": "string", "enum": ["finalized", "blocked"] },
+          "resume_final": { "type": "string" },
+          "blocked_reasons": { "type": "array", "items": { "type": "string" } },
+          "selected_profile": { "type": "string", "enum": ["tech", "non_tech", "hybrid", "executive"] },
+          "suggested_output": {
+            "type": "object",
+            "properties": {
+              "path": { "type": "string" },
+              "filename": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "faq",
+      "description": "Answer common questions about using the MCP resume server",
+      "input_schema": {
+        "type": "object",
+        "required": ["question"],
+        "properties": {
+          "question": { "type": "string", "minLength": 3 },
+          "context": { "type": "object" }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["answer", "topic", "related_topics"],
+        "properties": {
+          "answer": { "type": "string" },
+          "topic": { "type": "string" },
+          "related_topics": { "type": "array", "items": { "type": "string" } },
+          "workspace_setup": {
+            "oneOf": [
+              { "$ref": "#/$defs/workspace_setup" },
+              { "type": "null" }
+            ]
+          },
+          "interactive": { "$ref": "#/$defs/interactive" }
+        }
+      }
+    },
+    {
+      "name": "identify_user",
+      "description": "Identify the current user by name or proceed anonymously",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "user_name": { "type": "string" }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["user_name", "user_slug", "is_anonymous", "message"],
+        "properties": {
+          "user_name": { "type": "string" },
+          "user_slug": { "type": "string" },
+          "is_anonymous": { "type": "boolean" },
+          "stored_skills_count": { "type": "integer", "minimum": 0 },
+          "message": { "type": "string" },
+          "preferences": { "type": "object" }
+        }
+      }
+    },
+    {
+      "name": "manage_skills",
+      "description": "Add, list, or remove supplemental skills stored in the user's personal profile",
+      "input_schema": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": { "type": "string", "enum": ["add", "list", "remove"] },
+          "skills": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name"],
+              "properties": {
+                "name": { "type": "string" },
+                "proficiency": { "type": "string", "enum": ["beginner", "intermediate", "advanced", "expert"] },
+                "years_experience": { "type": "number", "minimum": 0 },
+                "context": { "type": "string" },
+                "category": { "type": "string" }
+              }
+            }
+          },
+          "skill_names": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "output_schema": {
+        "type": "object",
+        "required": ["status", "action"],
+        "properties": {
+          "status": { "type": "string", "enum": ["ok", "blocked", "error"] },
+          "action": { "type": "string" },
+          "user_slug": { "type": "string" },
+          "skills": { "type": "array", "items": { "type": "object" } },
+          "added": { "type": "array", "items": { "type": "object" } },
+          "removed": { "type": "array", "items": { "type": "string" } },
+          "count": { "type": "integer", "minimum": 0 },
+          "message": { "type": "string" },
+          "interactive": { "$ref": "#/$defs/interactive" }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "workspace_setup": {
+      "type": "object",
+      "properties": {
+        "recommended_root": { "type": "string" },
+        "directories": { "type": "array", "items": { "type": "string" } },
+        "directory_descriptions": { "type": "object" },
+        "default_filename": { "type": "string" },
+        "action_required": { "type": "string", "enum": ["verify_or_create", "ask_user_then_create"] },
+        "description": { "type": "string" },
+        "readme_content": { "type": "string" }
+      }
+    },
+    "interactive": {
+      "type": "object",
+      "properties": {
+        "questions": { "type": "array", "items": { "type": "string" } },
+        "suggestions": { "type": "array", "items": { "type": "string" } },
+        "verification_needed": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["requirement", "status", "confidence", "evidence", "tag"],
+        "properties": {
+          "requirement": { "type": "string" },
+          "status": { "type": "string", "enum": ["matched", "partial", "missing"] },
+          "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+          "evidence": { "type": "array", "items": { "type": "string" } },
+          "tag": { "type": "string", "enum": ["VERIFIED", "INFERRED", "STRETCH", "USER-VERIFY", "USER-PROFILE"] },
+          "verification_needed": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+services:
+  proof_of_work:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: proof_of_work
+    restart: unless-stopped
+    ports:
+      - "5359:5359"
+    volumes:
+      - pow_data:/data
+    network_mode: bridge
+
+volumes:
+  pow_data:

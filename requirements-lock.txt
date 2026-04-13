@@ -1,0 +1,9 @@
+# Pinned dependencies for reproducible builds.
+# Source: requirements.txt (loose constraints).
+# Regenerate with:  pip-compile requirements.txt -o requirements-lock.txt
+#
+# Last updated: 2026-07-15  |  Python 3.12  |  fastmcp 3.x line
+
+fastmcp==3.2.3
+pyyaml==6.0.2
+jsonschema==4.23.0
