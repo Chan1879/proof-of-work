@@ -62,6 +62,22 @@ _root_logger.addHandler(_console_handler)
 
 logger = logging.getLogger("mcp_server")
 
+
+def _resolve_port() -> int:
+    """Resolve server port from env with a safe default.
+
+    Priority:
+    1) MCP_PORT
+    2) PORT (fallback for platform conventions)
+    3) 5359
+    """
+    raw = os.environ.get("MCP_PORT", os.environ.get("PORT", "5359"))
+    try:
+        return int(raw)
+    except ValueError:
+        logger.warning("Invalid port value '%s'; falling back to 5359", raw)
+        return 5359
+
 # ---------------------------------------------------------------------------
 # Tool loading
 # ---------------------------------------------------------------------------
@@ -143,4 +159,4 @@ logger.info("Server ready — %d tool(s) registered", loaded)
 if __name__ == "__main__":
     # transport="http" uses Streamable HTTP (replaces legacy SSE)
     # host="0.0.0.0" is required for Docker access
-    mcp.run(transport="http", host="0.0.0.0", port=5359)
+    mcp.run(transport="http", host="0.0.0.0", port=_resolve_port())

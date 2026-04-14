@@ -18,6 +18,17 @@ COPY tools/ /app/tools/
 # Default templates (staged in image, synced to /data/templates at runtime)
 COPY templates/ /app/templates/
 
+# Optional external context (for example V: drive files) is staged under
+# /app/external/vdrive and then copied into internal app paths during build.
+# The named context is supplied by docker-compose `additional_contexts`.
+COPY --from=vdrive_files . /app/external/vdrive/
+RUN if [ -d /app/external/vdrive/tools ]; then \
+        cp -a /app/external/vdrive/tools/. /app/tools/; \
+    fi \
+    && if [ -d /app/external/vdrive/templates ]; then \
+        cp -a /app/external/vdrive/templates/. /app/templates/; \
+    fi
+
 # Entrypoint script — ensures /data dirs exist and syncs missing defaults
 COPY entrypoint.sh .
 RUN chmod +x entrypoint.sh
@@ -40,8 +51,9 @@ ENV AUDIT_LOG_PATH=/data/logs/audit.jsonl
 ENV LOG_DIR=/data/logs
 ENV TOOLS_DIR=/data/tools
 ENV USERS_DIR=/data/users
+ENV MCP_PORT=5359
 
-EXPOSE 5359
+EXPOSE ${MCP_PORT}
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD /usr/local/bin/healthcheck.sh

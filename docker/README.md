@@ -25,12 +25,27 @@ docker logs proof_of_work
 
 The server starts on **port 5359** with Streamable HTTP transport.
 
+To override the port:
+
+```bash
+MCP_PORT=8080 docker compose -f docker/docker-compose.yml up --build -d
+```
+
+This maps `${MCP_PORT}` on host and container and sets `MCP_PORT` inside the container.
+
+To include files from `V:` during build (BuildKit named context):
+
+```powershell
+$env:VDRIVE_CONTEXT = 'V:/proof-of-work-seed'
+docker compose -f docker/docker-compose.yml up --build -d
+```
+
 ## Image Architecture
 
 The Dockerfile uses a layered approach:
 
 1. **Base** — `python:3.12-slim-bookworm`
-2. **Dependencies** — `pip install -r requirements.txt`
+2. **Dependencies** — `pip install -r requirements-lock.txt`
 3. **Infrastructure (baked in)** — `engine/`, `helpers/`, `policies/`, `server.py` — these are part of the image and not modifiable at runtime.
 4. **Defaults (hot-swappable)** — `tools/` and `templates/` are staged in `/app/` and synced to `/data/` at first boot. Users can modify files in `/data/tools/` and `/data/templates/` without rebuilding the image.
 
@@ -56,6 +71,16 @@ See the main [README](../README.md#configuration) for the full list. Key variabl
 | `USERS_DIR` | `/data/users` | Per-user data storage root |
 | `AUDIT_LOG_PATH` | `/data/logs/audit.jsonl` | Path to audit log file |
 | `LOG_DIR` | `/data/logs` | Server log directory |
+| `MCP_PORT` | `5359` | MCP HTTP listener port |
+
+Build-time variable:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VDRIVE_CONTEXT` | `./vdrive-empty` | Optional extra build context (for example `V:/...`) |
+
+When provided, files are copied to `/app/external/vdrive` first, then copied into
+`/app/tools` and `/app/templates` if matching folders are present.
 
 ## Health Check
 

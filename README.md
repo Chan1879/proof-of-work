@@ -32,7 +32,21 @@ cd proof-of-work
 docker compose -f docker/docker-compose.yml up --build -d
 ```
 
-The server starts on **port 5359** with Streamable HTTP transport. Connect any MCP-compatible client to `http://localhost:5359/mcp`.
+The server starts on **port 5359** by default with Streamable HTTP transport.
+Set `MCP_PORT` to override:
+
+```bash
+MCP_PORT=8080 docker compose -f docker/docker-compose.yml up --build -d
+```
+
+Connect any MCP-compatible client to `http://localhost:${MCP_PORT:-5359}/mcp`.
+
+To pull extra tool/template files from a `V:` path during image build:
+
+```powershell
+$env:VDRIVE_CONTEXT = 'V:/proof-of-work-seed'
+docker compose -f docker/docker-compose.yml up --build -d
+```
 
 ### Local Python
 
@@ -91,22 +105,22 @@ After adding, VS Code will show a **Start** button next to the server entry. Cli
 ## Architecture
 
 ```
-┌──────────────┐    MCP/HTTP     ┌──────────────────────────────────────┐
-│  MCP Client  │ ◄──────────────► │  server.py (FastMCP)                 │
-│  (AI Agent)  │                  │                                      │
-└──────────────┘                  │  ┌──────────┐   ┌────────────────┐  │
-                                  │  │ tools/*  │──►│ engine/session  │  │
-                                  │  │ (7 tools)│   │  ├─ policy_check│  │
-                                  │  └──────────┘   │  ├─ contracts   │  │
-                                  │                  │  ├─ audit       │  │
-                                  │  ┌──────────┐   │  └─ policy_engine│ │
-                                  │  │helpers/* │   └────────────────┘  │
-                                  │  │naming    │                       │
-                                  │  │questions │   ┌────────────────┐  │
-                                  │  │user_store│   │ policies/      │  │
-                                  │  └──────────┘   │  rules + schemas│  │
-                                  │                  └────────────────┘  │
-                                  └──────────────────────────────────────┘
+┌──────────────┐    MCP/HTTP      ┌────────────────────────────────────────┐
+│  MCP Client  │ ◄──────────────► │  server.py (FastMCP)                   │
+│  (AI Agent)  │                  │                                        │
+└──────────────┘                  │  ┌──────────┐   ┌──────────────────┐   │
+                                  │  │ tools/*  │──►│ engine/session   │   │
+                                  │  │ (7 tools)│   │  ├─ policy_check │   │
+                                  │  └──────────┘   │  ├─ contracts    │   │
+                                  │                 │  ├─ audit        │   │
+                                  │  ┌──────────┐   │  └─ policy_engine│   │
+                                  │  │helpers/* │   └──────────────────┘   │
+                                  │  │naming    │                          │
+                                  │  │questions │   ┌──────────────────┐   │
+                                  │  │user_store│   │ policies/        │   │
+                                  │  └──────────┘   │  rules + schemas │   │
+                                  │                 └──────────────────┘   │
+                                  └────────────────────────────────────────┘
 ```
 
 **Request flow:** Client calls tool via MCP → Tool validates input (contracts) → Tool builds response scaffold → `engine.session.finalize_tool_response()` runs policy evaluation → Audit event logged → Result returned (or blocked with reasons).
@@ -168,6 +182,13 @@ All paths are configurable via environment variables:
 | `LOG_DIR` | `/data/logs` | Directory for server logs |
 | `TOOLS_DIR` | `/data/tools` | Directory to scan for tool plugins |
 | `USERS_DIR` | `/data/users` | Per-user data storage root |
+| `MCP_PORT` | `5359` | HTTP port used by the MCP server |
+
+Docker build (Compose) also supports an external context for V-drive content:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VDRIVE_CONTEXT` | `./vdrive-empty` | Build context path (relative to `docker/docker-compose.yml`) staged to `/app/external/vdrive` and copied into `/app/tools` and `/app/templates` if those folders exist |
 
 ---
 
