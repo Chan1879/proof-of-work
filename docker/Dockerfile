@@ -1,0 +1,61 @@
+FROM python:3.12-slim-bookworm
+
+WORKDIR /app
+
+COPY requirements-lock.txt .
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements-lock.txt
+
+# Infrastructure modules (baked into image, not hot-swappable)
+COPY policies/ policies/
+COPY server.py .
+COPY engine/ engine/
+COPY helpers/ helpers/
+
+# Default tool plugins (staged in image, synced to /data/tools at runtime)
+COPY tools/ /app/tools/
+
+# Default templates (staged in image, synced to /data/templates at runtime)
+COPY templates/ /app/templates/
+
+# Optional external context (for example V: drive files) is staged under
+# /app/external/vdrive and then copied into internal app paths during build.
+# The named context is supplied by docker-compose `additional_contexts`.
+COPY --from=vdrive_files . /app/external/vdrive/
+RUN if [ -d /app/external/vdrive/tools ]; then \
+        cp -a /app/external/vdrive/tools/. /app/tools/; \
+    fi \
+    && if [ -d /app/external/vdrive/templates ]; then \
+        cp -a /app/external/vdrive/templates/. /app/templates/; \
+    fi
+
+# Entrypoint script — ensures /data dirs exist and syncs missing defaults
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
+
+# Runtime healthcheck script validates persistent data bootstrap
+COPY docker/healthcheck.sh /usr/local/bin/healthcheck.sh
+RUN chmod +x /usr/local/bin/healthcheck.sh
+
+# Persistent data directory: tools (hot-swappable) + templates + logs + per-user data
+RUN mkdir -p /data/tools /data/templates /data/logs /data/users
+VOLUME ["/data"]
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PIP_NO_CACHE_DIR=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV POLICY_PACK_PATH=/app/policies/policy-rules.yaml
+ENV CONTRACTS_PATH=/app/policies/tool-contracts.json
+ENV AUDIT_LOG_PATH=/data/logs/audit.jsonl
+ENV LOG_DIR=/data/logs
+ENV TOOLS_DIR=/data/tools
+ENV USERS_DIR=/data/users
+ENV MCP_PORT=5359
+
+EXPOSE ${MCP_PORT}
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD /usr/local/bin/healthcheck.sh
+
+ENTRYPOINT ["bash", "entrypoint.sh"]

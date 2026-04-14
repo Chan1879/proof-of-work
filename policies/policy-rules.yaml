@@ -1,0 +1,321 @@
+version: 1.0.0
+mode: soft_stop
+
+# Configurable thresholds used by PolicyEngine.evaluate()
+guardrails:
+  # Minimum confidence for STRETCH/INFERRED claims before requiring USER-VERIFY
+  low_confidence_floor: 0.4
+  # Minimum evidence_log entries a draft must contain
+  min_evidence_entries: 1
+  # USER-PROFILE claims below this confidence are blocked at finalize
+  user_profile_corroboration_floor: 0.7
+  # Bullet-to-evidence ratio that triggers a density warning
+  claim_density_ratio: 2.0
+
+profiles:
+  tech:
+    description: "Technical depth, architecture, tooling, reliability and automation emphasis"
+    required_sections:
+      - "Professional Summary"
+      - "Technical Skills"
+      - "Professional Experience"
+      - "Education"
+    optional_sections:
+      - "Volunteer Experience"
+      - "Special Programs & Initiatives"
+    prefer_signals:
+      - "architecture"
+      - "platform"
+      - "automation"
+      - "reliability"
+  non_tech:
+    description: "Business outcomes, leadership, collaboration, and communication emphasis"
+    required_sections:
+      - "Professional Summary"
+      - "Core Competencies"
+      - "Professional Experience"
+      - "Education"
+    optional_sections:
+      - "Technical Skills"
+      - "Volunteer Experience"
+      - "Special Programs & Initiatives"
+    prefer_signals:
+      - "stakeholder"
+      - "business_impact"
+      - "leadership"
+      - "decision_quality"
+  hybrid:
+    description: "Balanced technical and business framing"
+    required_sections:
+      - "Professional Summary"
+      - "Technical Skills"
+      - "Professional Experience"
+      - "Education"
+    optional_sections:
+      - "Volunteer Experience"
+      - "Special Programs & Initiatives"
+    prefer_signals:
+      - "architecture"
+      - "business_impact"
+      - "leadership"
+  executive:
+    description: "Org-level strategy, governance, portfolio impact, and risk management"
+    required_sections:
+      - "Executive Summary"
+      - "Leadership Impact"
+      - "Professional Experience"
+      - "Education"
+    optional_sections:
+      - "Technical Skills"
+      - "Volunteer Experience"
+      - "Special Programs & Initiatives"
+    prefer_signals:
+      - "portfolio_impact"
+      - "governance"
+      - "cross_functional_influence"
+      - "risk_management"
+
+precedence:
+  - P0_TRUTH_SAFETY
+  - P1_VERIFICATION
+  - P2_WORKFLOW
+  - P3_RESUME_QUALITY
+  - P4_ATS_FORMAT
+  - P5_USER_DATA_ISOLATION
+
+policies:
+  - id: P2A_RESUME_PROFILE_SELECTION
+    class: P2_WORKFLOW
+    severity: hard
+    when:
+      all:
+        - action in ["generate_resume_draft", "generate_draft"]
+        - session.selected_profile is_null
+    then:
+      actions:
+        - resolve_profile_from: ["input.resume_type", "input.audience", "analysis.job_signals"]
+        - persist: ["session.selected_profile", "session.profile_reasoning"]
+
+  - id: P2A_USER_PROFILE_OVERRIDE
+    class: P2_WORKFLOW
+    severity: hard
+    when:
+      all:
+        - input.resume_type in ["tech", "non_tech", "hybrid", "executive"]
+    then:
+      actions:
+        - set_selected_profile_from: "input.resume_type"
+
+  - id: P0_NO_FABRICATION
+    class: P0_TRUTH_SAFETY
+    severity: hard
+    when:
+      any:
+        - claim.missing_evidence == true
+        - claim.numeric_value_source == "inferred"
+    then:
+      actions:
+        - tag: USER-VERIFY
+        - block_claim_promotion: true
+        - require_prompt: "Do you confirm this exact value? Reply with verified value or no."
+
+  - id: P0_NO_UNSUPPORTED_PROFICIENCY
+    class: P0_TRUTH_SAFETY
+    severity: hard
+    when:
+      all:
+        - claim.type == "skill_proficiency"
+        - claim.level in ["Expert", "Master", "Guru"]
+        - evidence.strength < 0.9
+    then:
+      actions:
+        - rewrite_to: "precise_alternative"
+        - add_note: "Use architecture/ownership language instead of unsupported proficiency labels"
+
+  - id: P0_REQUIRE_PROVENANCE_TAG
+    class: P0_TRUTH_SAFETY
+    severity: hard
+    when:
+      any:
+        - claim.tag not_in ["VERIFIED", "INFERRED", "STRETCH", "USER-VERIFY", "USER-PROFILE"]
+    then:
+      actions:
+        - reject_output: true
+
+  - id: P1_SOFT_STOP_FINALIZE_GATE
+    class: P1_VERIFICATION
+    severity: hard
+    when:
+      all:
+        - action in ["finalize_resume", "export_resume"]
+        - output.unresolved_verification_count > 0
+    then:
+      actions:
+        - block_action: true
+        - return_reason: "Unresolved verification-required claims exist"
+
+  - id: P1_ALLOW_DRAFT_WITH_PLACEHOLDERS
+    class: P1_VERIFICATION
+    severity: soft
+    when:
+      all:
+        - action == "generate_draft"
+        - output.unresolved_verification_count >= 0
+    then:
+      actions:
+        - allow_action: true
+        - require_section: "verification_questions"
+
+  - id: P1_REQUIRE_PROFILE_IN_OUTPUT
+    class: P1_VERIFICATION
+    severity: hard
+    when:
+      any:
+        - output.selected_profile not_in ["tech", "non_tech", "hybrid", "executive"]
+    then:
+      actions:
+        - reject_output: true
+
+  - id: P2_REQUIRE_TWO_STAGE_FLOW
+    class: P2_WORKFLOW
+    severity: hard
+    when:
+      any:
+        - session.has_quick_match == false
+        - action == "finalize_resume"
+    then:
+      actions:
+        - block_action: true
+        - return_reason: "Quick Match stage must run before finalization"
+
+  - id: P2_DOMAIN_SHIFT_ALERT
+    class: P2_WORKFLOW
+    severity: soft
+    when:
+      all:
+        - analysis.domain_shift_score >= 0.35
+    then:
+      actions:
+        - require_section: "domain_shift_warning"
+        - require_options: ["aggressive", "conservative", "hybrid"]
+
+  - id: P3_BULLET_QUALITY_MINIMUM
+    class: P3_RESUME_QUALITY
+    severity: soft
+    when:
+      any:
+        - bullet.has_action_verb == false
+        - bullet.has_context == false
+        - bullet.has_result == false
+    then:
+      actions:
+        - rewrite_bullet: true
+        - add_placeholder_if_metric_missing: true
+
+  - id: P3_SENIORITY_ALIGNMENT
+    class: P3_RESUME_QUALITY
+    severity: soft
+    when:
+      all:
+        - target.level in ["Senior", "Staff", "Principal", "VP"]
+        - output.scope_signals_count < 2
+    then:
+      actions:
+        - require_scope_language: true
+        - require_leadership_signal: true
+
+  - id: P3_PROFILE_QUALITY_ADAPTATION
+    class: P3_RESUME_QUALITY
+    severity: soft
+    when:
+      all:
+        - output.selected_profile == "non_tech"
+    then:
+      actions:
+        - require_business_impact_signal: true
+        - require_stakeholder_signal: true
+        - reduce_tool_name_density: true
+
+  - id: P3_PROFILE_QUALITY_EXECUTIVE
+    class: P3_RESUME_QUALITY
+    severity: soft
+    when:
+      all:
+        - output.selected_profile == "executive"
+    then:
+      actions:
+        - require_portfolio_scope_signal: true
+        - require_governance_or_risk_signal: true
+        - cap_low_level_implementation_bullets: true
+
+  - id: P3_SUGGEST_VOLUNTEER_SECTIONS
+    class: P3_RESUME_QUALITY
+    severity: soft
+    when:
+      all:
+        - action in ["map_resume_to_requirements", "generate_resume_draft"]
+        - output.missing_count > 0
+    then:
+      actions:
+        - suggest_section: "Volunteer Experience"
+        - suggest_section: "Special Programs & Initiatives"
+        - add_interactive_prompt: "Do you have volunteer work, mentorship, or special program participation that could fill skill gaps?"
+
+  - id: P4_ATS_SAFE_OUTPUT
+    class: P4_ATS_FORMAT
+    severity: soft
+    when:
+      all:
+        - output.format in ["md", "docx", "txt"]
+    then:
+      actions:
+        - forbid_patterns: ["markdown_table", "image_embed", "html_tag"]
+        - require_sections_from_profile: true
+
+  # -------------------------------------------------------------------------
+  # P5: User Data Isolation
+  # -------------------------------------------------------------------------
+  - id: P5_SKILL_SCOPE_ISOLATION
+    class: P5_USER_DATA_ISOLATION
+    severity: hard
+    when:
+      all:
+        - action in ["map_resume_to_requirements", "generate_resume_draft"]
+        - supplemental_skills_loaded == true
+    then:
+      actions:
+        - require: "supplemental_skills sourced only from current session user_slug"
+        - reject_cross_user_data: true
+
+  - id: P5_ANONYMOUS_NO_DISK_IO
+    class: P5_USER_DATA_ISOLATION
+    severity: hard
+    when:
+      all:
+        - session.user_context.is_anonymous == true
+    then:
+      actions:
+        - block_disk_read: "/data/users/"
+        - block_disk_write: "/data/users/"
+
+  - id: P5_USER_PROFILE_REQUIRES_VERIFICATION
+    class: P5_USER_DATA_ISOLATION
+    severity: soft
+    when:
+      all:
+        - action in ["finalize_resume", "export_resume"]
+        - claim.tag == "USER-PROFILE"
+        - claim.corroborated_by_resume == false
+    then:
+      actions:
+        - require_verification: true
+        - add_note: "Skills sourced only from stored profile (not in resume text) require user confirmation before finalization"
+
+thresholds:
+  fuzzy_match_confidence_min: 0.80
+  inferred_match_requires_tag: true
+  jd_signal_override_confidence_min: 0.70
+  user_profile_default_confidence: 0.50
+  verification_blocking_actions:
+    - finalize_resume
+    - export_resume

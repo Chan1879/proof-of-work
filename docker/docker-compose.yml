@@ -1,0 +1,19 @@
+services:
+  proof_of_work:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      additional_contexts:
+        vdrive_files: ${VDRIVE_CONTEXT:-./vdrive-empty}
+    container_name: proof_of_work
+    restart: unless-stopped
+    environment:
+      MCP_PORT: ${MCP_PORT:-5359}
+    ports:
+      - "${MCP_PORT:-5359}:${MCP_PORT:-5359}"
+    volumes:
+      - pow_data:/data
+    network_mode: bridge
+
+volumes:
+  pow_data:
