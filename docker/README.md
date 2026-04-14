@@ -33,13 +33,6 @@ MCP_PORT=8080 docker compose -f docker/docker-compose.yml up --build -d
 
 This maps `${MCP_PORT}` on host and container and sets `MCP_PORT` inside the container.
 
-To include files from `V:` during build (BuildKit named context):
-
-```powershell
-$env:VDRIVE_CONTEXT = 'V:/proof-of-work-seed'
-docker compose -f docker/docker-compose.yml up --build -d
-```
-
 ## Image Architecture
 
 The Dockerfile uses a layered approach:
@@ -72,15 +65,6 @@ See the main [README](../README.md#configuration) for the full list. Key variabl
 | `AUDIT_LOG_PATH` | `/data/logs/audit.jsonl` | Path to audit log file |
 | `LOG_DIR` | `/data/logs` | Server log directory |
 | `MCP_PORT` | `5359` | MCP HTTP listener port |
-
-Build-time variable:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VDRIVE_CONTEXT` | `./vdrive-empty` | Optional extra build context (for example `V:/...`) |
-
-When provided, files are copied to `/app/external/vdrive` first, then copied into
-`/app/tools` and `/app/templates` if matching folders are present.
 
 ## Health Check
 
