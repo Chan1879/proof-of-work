@@ -41,13 +41,6 @@ MCP_PORT=8080 docker compose -f docker/docker-compose.yml up --build -d
 
 Connect any MCP-compatible client to `http://localhost:${MCP_PORT:-5359}/mcp`.
 
-To pull extra tool/template files from a `V:` path during image build:
-
-```powershell
-$env:VDRIVE_CONTEXT = 'V:/proof-of-work-seed'
-docker compose -f docker/docker-compose.yml up --build -d
-```
-
 ### Local Python
 
 ```bash
@@ -183,12 +176,6 @@ All paths are configurable via environment variables:
 | `TOOLS_DIR` | `/data/tools` | Directory to scan for tool plugins |
 | `USERS_DIR` | `/data/users` | Per-user data storage root |
 | `MCP_PORT` | `5359` | HTTP port used by the MCP server |
-
-Docker build (Compose) also supports an external context for V-drive content:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `VDRIVE_CONTEXT` | `./vdrive-empty` | Build context path (relative to `docker/docker-compose.yml`) staged to `/app/external/vdrive` and copied into `/app/tools` and `/app/templates` if those folders exist |
 
 ---
 
