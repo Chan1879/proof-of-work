@@ -29,6 +29,32 @@ python utils/convert_md_to_pdf.py resume-workspace/tailored/connor-sample-2026-0
 
 ---
 
+### `convert_md_to_docx.py`
+
+Convert Markdown resume files to DOCX (Word document) format using python-docx.
+
+**Usage:**
+```bash
+python utils/convert_md_to_docx.py <input.md> <output.docx>
+```
+
+**Example:**
+```bash
+python utils/convert_md_to_docx.py resume-workspace/tailored/connor-sample-2026-04/final.md resume-workspace/tailored/connor-sample-2026-04/final.docx
+```
+
+**Requirements:**
+- `python-docx` (install via `pip install python-docx`)
+
+**What it does:**
+- Reads Markdown file with headers (`#`, `##`, `###`)
+- Converts headers to Word heading styles
+- Converts bullet points (`-`) to Word bullet list style
+- Preserves spacing and line breaks
+- Outputs a native DOCX file that can be opened and edited in Microsoft Word
+
+---
+
 ## Contributing
 
 To add a new utility script:
