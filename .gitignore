@@ -10,6 +10,11 @@ logs/
 # Ignore user data
 users/
 
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+
 # Ignore temporary files
 *.tmp
 *.log
@@ -21,3 +26,6 @@ users/
 
 # Ignore generated PDFs
 *.pdf
+
+# Ignore conversion script
+convert_md_to_pdf.py
