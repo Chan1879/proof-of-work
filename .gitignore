@@ -24,8 +24,9 @@ __pycache__/
 .vscode/
 .idea/
 
-# Ignore generated PDFs
+# Ignore generated PDFs/word documents
 *.pdf
+*.doc
+*.docx
 
-# Ignore conversion script
 convert_md_to_pdf.py
