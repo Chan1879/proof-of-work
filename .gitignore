@@ -1,0 +1,23 @@
+# Ignore personal and sensitive files
+resume-workspace/
+
+# Ignore virtual environment
+venv/
+
+# Ignore logs
+logs/
+
+# Ignore user data
+users/
+
+# Ignore temporary files
+*.tmp
+*.log
+.DS_Store
+
+# Ignore IDE files
+.vscode/settings.json
+.idea/
+
+# Ignore generated PDFs
+*.pdf
