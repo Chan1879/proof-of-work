@@ -21,7 +21,7 @@ __pycache__/
 .DS_Store
 
 # Ignore IDE files
-.vscode/settings.json
+.vscode/
 .idea/
 
 # Ignore generated PDFs
