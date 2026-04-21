@@ -57,11 +57,7 @@ def manage_skills(
             "skills": [],
             "count": 0,
         }
-        try:
-            session_state.contracts.validate_output("manage_skills", result)
-        except ContractValidationError as exc:
-            return {"status": "error", "action": action, "error": str(exc)}
-        return result
+        return session_state.finalize_tool_response("manage_skills", payload, result)
 
     action = (action or "").strip().lower()
     if action not in _VALID_ACTIONS:
@@ -85,11 +81,7 @@ def manage_skills(
                 else "No skills stored yet. Use action 'add' to store supplemental skills."
             ),
         }
-        try:
-            session_state.contracts.validate_output("manage_skills", result)
-        except ContractValidationError as exc:
-            return {"status": "error", "action": action, "error": str(exc)}
-        return result
+        return session_state.finalize_tool_response("manage_skills", payload, result)
 
     # -- ADD ----------------------------------------------------------------
     if action == "add":
@@ -150,11 +142,7 @@ def manage_skills(
             payload={"action": "add", "count": len(clean)},
             user_slug=ctx.slug,
         )
-        try:
-            session_state.contracts.validate_output("manage_skills", result)
-        except ContractValidationError as exc:
-            return {"status": "error", "action": action, "error": str(exc)}
-        return result
+        return session_state.finalize_tool_response("manage_skills", payload, result)
 
     # -- REMOVE -------------------------------------------------------------
     if action == "remove":
@@ -180,11 +168,7 @@ def manage_skills(
             "count": len(remaining),
             "message": f"Removed requested skills. {len(remaining)} skill(s) remaining.",
         }
-        try:
-            session_state.contracts.validate_output("manage_skills", result)
-        except ContractValidationError as exc:
-            return {"status": "error", "action": action, "error": str(exc)}
-        return result
+        return session_state.finalize_tool_response("manage_skills", payload, result)
 
     # Should not reach here
     return {"status": "error", "error": "Unhandled action."}

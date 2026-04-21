@@ -6,7 +6,7 @@ This directory contains the two configuration files that govern all tool behavio
 
 ### `policy-rules.yaml` — Policy Rule Engine Configuration
 
-Defines 5 policy tiers (P0–P5) with 25+ rules for truth safety, verification gates, workflow ordering, resume quality, ATS formatting, and user data isolation.
+Defines 6 policy tiers (P0–P5) with 25+ rules for truth safety, verification gates, workflow ordering, resume quality, ATS formatting, and user data isolation.
 
 #### Policy Tiers
 

@@ -70,4 +70,4 @@ def log_event(
         with LOG_PATH.open("a", encoding="utf-8") as fh:
             fh.write(line + "\n")
     except OSError:
-        pass  # non-blocking; container may lack write access on first run
+        logger.warning("Audit log write failed for %s event", event_type, exc_info=True)

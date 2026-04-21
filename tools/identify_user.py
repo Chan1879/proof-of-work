@@ -77,19 +77,7 @@ def identify_user(
     if prefs:
         result["preferences"] = prefs
 
-    log_event(
-        event_type="tool_call",
-        tool_name="identify_user",
-        payload=payload,
-        user_slug=ctx.slug,
-    )
-
-    try:
-        session_state.contracts.validate_output("identify_user", result)
-    except ContractValidationError as exc:
-        return {"status": "error", "error": str(exc), "user_slug": ctx.slug}
-
-    return result
+    return session_state.finalize_tool_response("identify_user", payload, result)
 
 
 TOOL_DEF = {

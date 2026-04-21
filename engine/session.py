@@ -61,7 +61,6 @@ def get_session(user: UserContext | None = None) -> dict[str, Any]:
 
 # Convenience alias — existing tools import ``session`` directly.
 # After the migration, this always reflects the *active* user's session.
-@property  # type: ignore[misc]
 def _session_proxy() -> dict[str, Any]:
     return get_session()
 
