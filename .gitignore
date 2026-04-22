@@ -1,5 +1,5 @@
 # ignore personal and environment-specific files
-resume-workspace.code-workspace
+resume-workspace/
 
 #ignore user-specific 
 users/
