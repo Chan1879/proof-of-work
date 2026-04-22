@@ -1,3 +1,12 @@
+# ignore personal and environment-specific files
+resume-workspace.code-workspace
+
+#ignore user-specific 
+users/
+
+#ignor logs
+logs/
+
 # Python
 __pycache__/
 *.py[cod]
@@ -36,3 +45,7 @@ docs/
 # Byte-compiled / cached
 *.pyo
 *.pdb
+
+#ignore generated Docs 
+*.doc
+*.pdf
