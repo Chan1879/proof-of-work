@@ -1,0 +1,25 @@
+# Git
+.git/
+.gitignore
+
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# IDE / Editor
+.idea/
+.vscode/
+
+# Documentation (not needed in container image)
+docs/
+*.md
+!templates/*.md
+
+# Environment files
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db

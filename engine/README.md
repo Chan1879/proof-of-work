@@ -19,9 +19,9 @@ Loads `tool-contracts.json` from the policies directory and validates tool paylo
 - `ContractRegistry` — Loads contracts, exposes `validate_input()` and `validate_output()` methods.
 - `ContractValidationError` — Raised when a payload fails schema validation.
 
-### `policy_engine.py` — P0–P4 Policy Rule Engine
+### `policy_engine.py` — P0–P5 Policy Rule Engine
 
-Loads `policy-rules.yaml` and evaluates tool actions against five policy tiers:
+Loads `policy-rules.yaml` and evaluates tool actions against six policy tiers:
 
 | Tier | Name | Purpose |
 |------|------|---------|
@@ -30,6 +30,7 @@ Loads `policy-rules.yaml` and evaluates tool actions against five policy tiers:
 | P2 | Workflow Order | `analyze_jd` must run before `finalize`; domain-shift alerting |
 | P3 | Quality | Action + Context + Result bullet format; seniority alignment |
 | P4 | ATS Format | No markdown tables/images in final output; sections match profile |
+| P5 | User Data Isolation | User-scoped data access, profile evidence scope enforcement |
 
 **Key classes/functions:**
 - `PolicyEngine` — Loads rules, provides `evaluate()` and `resolve_profile()`.

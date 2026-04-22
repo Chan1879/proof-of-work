@@ -1,29 +1,38 @@
-# Ignore personal and sensitive files
-resume-workspace/
-
-# Ignore virtual environment
-venv/
-
-# Ignore logs
-logs/
-
-# Ignore user data
-users/
-
-# Ignore Python cache
+# Python
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
 
-# Ignore temporary files
-*.tmp
-*.log
-.DS_Store
+# Virtual environments
+venv/
+.venv/
+env/
 
-# Ignore IDE files
-.vscode/
+# IDE / Editor
 .idea/
+.vscode/
+*.swp
+*.swo
+*~
 
-# Ignore generated documents (output files only, not utils/ scripts)
-*.doc
-*.docx
+# Environment variables
+.env
+.env.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker persistent data (runtime only, not in repo)
+/data/
+
+# Internal design docs (personal reference, not for public repo)
+docs/
+
+# Byte-compiled / cached
+*.pyo
+*.pdb

@@ -83,6 +83,6 @@ If any check fails, the container is marked unhealthy.
 The `entrypoint.sh` script syncs missing default files from `/app/` to `/data/` at boot. It only copies files that don't already exist, preserving any user customizations.
 
 To add a custom tool:
-1. Write a `.py` file exporting a `TOOL_DEF` dict (see [tools/README.md](../tools/README.md#writing-a-custom-tool)).
+1. Write a `.py` file exporting a `TOOL_DEF` dict (see [tools/README.md](../tools/README.md#tool-plugins)).
 2. Copy it into the running container's `/data/tools/` directory.
 3. Restart the container — the server will load it automatically.

@@ -153,7 +153,8 @@ class UserStore:
         path = self._skills_path(ctx)
         if path is None:
             return []
-        return _read_json(path, default=[])
+        raw = _read_json(path, default=[])
+        return [s for s in raw if isinstance(s, dict) and s.get("name")]
 
     def add_skills(self, ctx: UserContext, skills: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Append *skills* to the user's skill store.
@@ -195,7 +196,10 @@ class UserStore:
             return []
         existing = _read_json(path, default=[])
         lower_names = {n.lower() for n in skill_names}
-        remaining = [s for s in existing if s.get("name", "").lower() not in lower_names]
+        remaining = [
+            s for s in existing
+            if isinstance(s, dict) and s.get("name", "").lower() not in lower_names
+        ]
         _write_json(path, remaining)
         return remaining
 
