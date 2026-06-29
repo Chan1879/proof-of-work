@@ -34,10 +34,13 @@ _PROJECT_ROOT = str(Path(__file__).resolve().parent)
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 
+from helpers.runtime_paths import configure_runtime_environment
+
 # ---------------------------------------------------------------------------
-# Logging configuration — writes to /data/logs/server.log
+# Logging configuration — writes to a writable runtime directory
 # ---------------------------------------------------------------------------
-LOG_DIR = Path(os.environ.get("LOG_DIR", "/data/logs"))
+runtime_defaults = configure_runtime_environment(project_root=Path(__file__).resolve().parent)
+LOG_DIR = Path(os.environ.get("LOG_DIR", runtime_defaults["LOG_DIR"]))
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 _root_logger = logging.getLogger()
@@ -81,7 +84,7 @@ def _resolve_port() -> int:
 # ---------------------------------------------------------------------------
 # Tool loading
 # ---------------------------------------------------------------------------
-TOOLS_DIR = Path(os.environ.get("TOOLS_DIR", "/data/tools"))
+TOOLS_DIR = Path(os.environ.get("TOOLS_DIR", runtime_defaults["TOOLS_DIR"]))
 
 
 def _load_tool_module(filepath: Path):

@@ -13,7 +13,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-LOG_PATH = Path(os.environ.get("AUDIT_LOG_PATH", "/data/logs/audit.jsonl"))
+from helpers.runtime_paths import configure_runtime_environment
+
+runtime_defaults = configure_runtime_environment(project_root=Path(__file__).resolve().parent.parent)
+LOG_PATH = Path(os.environ.get("AUDIT_LOG_PATH", runtime_defaults["AUDIT_LOG_PATH"]))
 
 logger = logging.getLogger("resume_audit")
 logger.setLevel(logging.INFO)

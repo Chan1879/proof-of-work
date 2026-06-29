@@ -1,11 +1,14 @@
+from pathlib import Path
+import sys
+
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-import sys
+
 
 def markdown_to_pdf(md_file, pdf_file):
     # Read the markdown file
-    with open(md_file, 'r') as f:
+    with open(md_file, 'r', encoding='utf-8') as f:
         content = f.read()
 
     # Simple conversion: treat as text, split by lines
@@ -28,7 +31,9 @@ def markdown_to_pdf(md_file, pdf_file):
             story.append(Paragraph(line, styles['Normal']))
 
     # Create PDF
-    doc = SimpleDocTemplate(pdf_file, pagesize=letter)
+    output_path = Path(pdf_file)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    doc = SimpleDocTemplate(str(output_path), pagesize=letter)
     doc.build(story)
 
 if __name__ == '__main__':

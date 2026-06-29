@@ -16,9 +16,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
+from helpers.runtime_paths import configure_runtime_environment
+
 logger = logging.getLogger("user_store")
 
-USERS_DIR = Path(os.environ.get("USERS_DIR", "/data/users"))
+runtime_defaults = configure_runtime_environment(project_root=Path(__file__).resolve().parent.parent)
+USERS_DIR = Path(os.environ.get("USERS_DIR", runtime_defaults["USERS_DIR"]))
 
 _MAX_SLUG_LEN = 64
 _SLUG_RE = re.compile(r"[^a-z0-9]+")
